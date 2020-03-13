@@ -6,7 +6,7 @@ const httpTrigger: AzureFunction = async function(context: Context, req: HttpReq
   context.log("HTTP trigger function processed a request.");
   // Local execution setting in local.settings.json
   // Azure execution setting configuration -> Applicaiton settings
-  const url = process.env["SLACK_WEBHOOK_URL"];
+  const slack_webhook_url = process.env["SLACK_WEBHOOK_URL"];
 
   if (req.body) {
     var getStatus = function(problem) {
@@ -58,7 +58,7 @@ const httpTrigger: AzureFunction = async function(context: Context, req: HttpReq
     request(
       {
         method: "POST",
-        uri: url,
+        uri: slack_webhook_url,
         json: true,
         body: msg
       },
