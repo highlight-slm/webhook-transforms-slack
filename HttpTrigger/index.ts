@@ -1,55 +1,57 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 
-const request = require("request");
+import request = require("request");
 
+// tslint:disable-next-line: only-arrow-functions
 const httpTrigger: AzureFunction = async function(context: Context, req: HttpRequest): Promise<void> {
   context.log("HTTP trigger function processed a request.");
   // Local execution setting in local.settings.json
   // Azure execution setting configuration -> Applicaiton settings
-  const slack_webhook_url = process.env["SLACK_WEBHOOK_URL"];
+  const slackWebHook: string = process.env.SLACK_WEBHOOK_URL;
+
+  interface AlertStatus {
+    color?: string
+    direction?: string
+  }
 
   if (req.body) {
-    var getStatus = function(problem) {
+    function getStatus(problem: string) {
       // Example: "problem": "Link-Availability - Red alert raised"
 
-      const values = problem.match(/(\w+) alert (\w+)/i);
-      const hl_color = values[1].toLowerCase();
-      const hl_direction = values[2].toLowerCase();
-      var color = "";
-      var direction = "";
-      if (hl_direction === "raised") {
-        direction = ":warning:";
-        if (hl_color === "red") {
-          color = "danger";
-        } else if (hl_color === "amber") {
-          color = "warning";
+      const values: any = problem.match(/(\w+) alert (\w+)/i);
+      const highlightAlert: string = values[1].toLowerCase();
+      const highlightAlertDirection: string = values[2].toLowerCase();
+      const status = {} as AlertStatus
+      if (highlightAlertDirection === "raised") {
+        status.direction = ":warning:";
+        if (highlightAlert === "red") {
+          status.color = "danger";
+        } else if (highlightAlert === "amber") {
+          status.color = "warning";
         }
-      } else if (hl_direction === "cleared") {
-        direction = ":heavy_check_mark:";
-        color = "good";
+      } else if (highlightAlertDirection === "cleared") {
+        status.direction = ":heavy_check_mark:";
+        status.color = "good";
       } else {
-        direction = ":grey_question:";
+        status.direction = ":grey_question:";
       }
-      return {
-        color: color,
-        direction: direction
-      };
+      return status
     };
 
-    var messageAttachment = function(message) {
-      var attachment = [];
-      const json_message = JSON.parse(message);
-      var status = getStatus(json_message.problem);
+    function messageAttachment(message: string) {
+      const attachment: object[] = [];
+      const jsonMessage: any = JSON.parse(message);
+      const status: AlertStatus = getStatus(jsonMessage.problem);
       attachment.push({
         color: status.color,
-        title: status.direction + " " + json_message.alertSummary,
-        text: json_message.problem + " - <" + json_message.linkUrl + "|More Information>",
+        title: status.direction + " " + jsonMessage.alertSummary,
+        text: jsonMessage.problem + " - <" + jsonMessage.linkUrl + "|More Information>",
         mrkdown_in: ["title"]
       });
       return attachment;
     };
 
-    var msg = {
+    const msg = {
       mrkdwn: true,
       text: "Highlight Alert",
       attachments: messageAttachment(req.rawBody)
@@ -58,12 +60,13 @@ const httpTrigger: AzureFunction = async function(context: Context, req: HttpReq
     request(
       {
         method: "POST",
-        uri: slack_webhook_url,
+        uri: slackWebHook,
         json: true,
         body: msg
       },
+      // tslint:disable-next-line: only-arrow-functions
       function(error, response, body) {
-        if (response.statusCode == 200) {
+        if (response.statusCode === 200) {
           context.res = {
             body: "OK"
           };
