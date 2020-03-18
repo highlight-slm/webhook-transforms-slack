@@ -18,8 +18,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Python HTTP trigger function processed a request.")
     # Local execution setting in local.settings.json
     # Azure execution setting configuration -> Applicaiton settings
-    # slackWebhook = os.environ["SLACK_WEBHOOK_URL"]
-    slack_webhook = os.environ["SLACK_WEBHOOK_URL_TEST"]
+    slack_webhook = os.environ["SLACK_WEBHOOK_URL"]
 
     incoming_payload = req.get_json()
     if incoming_payload:
