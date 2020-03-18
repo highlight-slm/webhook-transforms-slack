@@ -20,7 +20,6 @@ const httpTrigger: AzureFunction = async (
 		// Example: "problem": "Link-Availability - Red alert raised"
 		const status = {} as IAlertStatus;
 		const values = problem.match(/(\w+) alert (\w+)/i);
-		// Add Null check
 		if (values) {
 			const highlightAlert = values[1].toLowerCase();
 			const highlightAlertDirection = values[2].toLowerCase();
@@ -54,7 +53,7 @@ const httpTrigger: AzureFunction = async (
 				jsonMessage.linkUrl +
 				"|More Information>",
 			// eslint-disable-next-line @typescript-eslint/camelcase
-			mrkdown_in: ["title"]
+			mrkdown_in: ["title", "text"]
 		});
 		return attachment;
 	}
