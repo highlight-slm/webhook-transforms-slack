@@ -17,7 +17,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     logging.info("Python HTTP trigger function processed a request.")
     # Local execution setting in local.settings.json
-    # Azure execution setting configuration -> Applicaiton settings
+    # Azure execution setting configuration -> Application settings
     slack_webhook = os.environ["SLACK_WEBHOOK_URL"]
 
     incoming_payload = req.get_json()
@@ -50,7 +50,7 @@ def create_attachment(payload):
     """Create Slack message attachment with additional problem information.
 
     :param payload: Highlight webhook json payload
-    :return: attachement (array)
+    :return: attachment (array)
     """
     status = get_status(payload.get("problem"))
     return [
@@ -68,7 +68,7 @@ def get_status(problem):
 
     :param problem: Highlight problem json string
                     e.g. "problem": "Link-Availability - Red alert raised"
-    :return: alert_status, named tupple for color and direction
+    :return: alert_status, named tuple for color and direction
     """
     # Example: "problem": "Link-Availability - Red alert raised"
     alert_status = namedtuple("alert_status", "color direction")
