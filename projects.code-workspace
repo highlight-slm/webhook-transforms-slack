@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"path": "Powershell"
+		},
+		{
+			"path": "Python"
+		},
+		{
+			"path": "TypeScript"
+		}
+	],
+    "settings": {
+        "debug.internalConsoleOptions": "neverOpen"
+    },
+    "launch": {
+        "configurations": [],
+        "compounds": [
+            {
+                "name": "Attach to both apps",
+                "configurations": [
+                    "Attach to PowerShell Functions",
+					"Attach to Python Functions",
+					"Attach to Node Functions"
+                ]
+            }
+        ]
+    }
+}
