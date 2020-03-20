@@ -15,18 +15,18 @@ if ($Request.Body) {
     $postResponse = Send-SlackMessage -SlackMessage $slackMessage -SlackUrl $slackWebhook
 
     if ($postResponse.StatusCode -eq 200) {
-        Write-Host("Webhook successfully sent to Slack")
+        Write-Host "Webhook successfully sent to Slack"
         $status = [HttpStatusCode]::OK
         $body = "OK"
     }
     else {
-        Write-Host("Error sending Webhook")
+        Write-Host "Error sending Webhook"
         $status = $postResponse.StatusCode
         $body = "Error sending webhook. Error: " + $postResponse.Content
     }
 }
 else {
-    Write-Host("Error empty incoming Webhook")
+    Write-Host "Error empty incoming Webhook"
     $status = [HttpStatusCode]::BadRequest
     $body = "Error: No Data"
 }

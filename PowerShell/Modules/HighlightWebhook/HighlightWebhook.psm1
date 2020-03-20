@@ -60,8 +60,8 @@ function Send-SlackMessage {
         [Parameter()]
         [string]$SlackUrl
     )
-    Write-Debug("Slack WebHook URL: $SlackUrl")
-    Write-Debug("Slack Message (json): $SlackUrl")
+    Write-Debug "Slack WebHook URL: $SlackUrl"
+    Write-Debug "Slack Message (json): $SlackUrl"
 
     return Invoke-WebRequest -Method 'Post' -Uri $SlackUrl -Body $SlackMessage
 }
