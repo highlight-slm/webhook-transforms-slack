@@ -10,5 +10,6 @@ Requires the Slack Webhook URL is configured as a Azure Function variable via Az
 
 ## Examples implementations
 
+* PowerShell
 * Python
 * TypeScript (Node.js)
