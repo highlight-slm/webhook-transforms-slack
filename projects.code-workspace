@@ -1,15 +1,19 @@
 {
 	"folders": [
-		{
-			"path": "Powershell"
-		},
-		{
-			"path": "Python"
-		},
-		{
-			"path": "TypeScript"
-		}
-	],
+        {
+            "path": "Powershell"
+        },
+        {
+            "path": "Python"
+        },
+        {
+            "path": "TypeScript"
+        },
+        {
+            "name": "CSharp",
+            "path": "CSharp"
+        }
+    ],
     "settings": {
         "debug.internalConsoleOptions": "neverOpen"
     },
