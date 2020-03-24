@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -15,12 +14,9 @@ using Newtonsoft.Json;
 
 namespace Highlight.WebHookParserFunction {
     public static class HttpTriggerCSharp {
-        private static readonly HttpClient httpClient;
-
-        static HttpTriggerCSharp () {
-            // Single instance for handling all requests.
-            httpClient = new HttpClient ();
-        }
+        // Single instance for handling all requests. To avoid client being created on each request.
+        // https://docs.microsoft.com/en-us/azure/architecture/antipatterns/improper-instantiation/
+        private static readonly HttpClient httpClient = new HttpClient ();
 
         [FunctionName ("HttpTriggerCSharp")]
         public static async Task<IActionResult> Run (
@@ -28,108 +24,149 @@ namespace Highlight.WebHookParserFunction {
             ILogger log) {
             log.LogInformation ("C# HTTP trigger function processed a request.");
             // Local execution setting in local.settings.json
-            // Azure execution setting configuration -> Applicaiton settings
-            string slackWebHookUrl = Environment.GetEnvironmentVariable ("SLACK_WEBHOOK_URL");
+            // Azure execution setting configuration -> Application settings
+            var slackWebHookUrl = Environment.GetEnvironmentVariable ("SLACK_WEBHOOK_URL");
+            if (string.IsNullOrWhiteSpace (slackWebHookUrl)) {
+                log.LogError ("Application variable SLACK_WEBHOOK_URL not set");
+                return new BadRequestResult ();
+            }
 
-            string requestBody = await new StreamReader (req.Body).ReadToEndAsync ();
-            dynamic data = JsonConvert.DeserializeObject (requestBody);
-            if (!string.IsNullOrEmpty (Convert.ToString (data))) {
-                string message = CreateSlackMessage (data);
-                var postResponse = await PostSlackMessage (message, slackWebHookUrl);
-                if (postResponse.IsSuccessStatusCode) {
-                    log.LogInformation ("Webhook successfully sent to Slack");
-                    return new OkObjectResult ("OK");
-                }
+            dynamic data = JsonConvert.DeserializeObject (await new StreamReader (req.Body).ReadToEndAsync ());
+            if (data == null) {
+                log.LogInformation ("Invalid input data");
+                return new BadRequestResult ();
+            }
+
+            var message = SlackMessage
+                .Create (data)
+                .ToString ();
+
+            if (await PostSlackMessage (message, slackWebHookUrl, log)) {
+                log.LogInformation ("Webhook successfully sent to Slack");
+                return new OkResult ();
+            } else {
                 log.LogInformation ("Error sending Webhook");
-                var content = await postResponse.Content.ReadAsStringAsync ();
-                return new BadRequestObjectResult ($"Error ({(int)postResponse.StatusCode} - {postResponse.StatusCode}) posting webhook: {content}");
+                return new BadRequestResult ();
             }
-            log.LogInformation ("Error empty incoming Webhook");
-            return new BadRequestObjectResult ("Error: No Data received.");
         }
 
-        public static string CreateSlackMessage (dynamic payload) {
-            SlackMessage message = new SlackMessage ();
-            message.text = "Highlight Alert";
-            message.attachments = CreateSlackAttachment (payload);
-            message.mrkdown = "True";
-            return JsonConvert.SerializeObject (message);;
-        }
+        public static async Task<bool> PostSlackMessage (string message,
+            string slacklUrl, ILogger log) {
+            var body = new StringContent (message, Encoding.UTF8, "application/json");
 
-        public static async Task<HttpResponseMessage> PostSlackMessage (string message, string slacklUrl) {
-            StringContent body = new StringContent (message, Encoding.UTF8, "application/json");
-            Uri uri = new Uri (slacklUrl);
-            HttpResponseMessage responseMessage = null;
             try {
-                responseMessage = await httpClient.PostAsync (uri, body);
-            } catch (Exception ex) {
-                if (responseMessage == null) {
-                    responseMessage = new HttpResponseMessage ();
-                }
-                responseMessage.StatusCode = HttpStatusCode.InternalServerError;
-                responseMessage.ReasonPhrase = string.Format ("Webhook send failed: {0}", ex);
-            }
-            return responseMessage;
-        }
+                var response = await httpClient.PostAsync (slacklUrl, body);
 
-        private static List<SlackAttachment> CreateSlackAttachment (dynamic payload) {
-            SlackAttachment attachment = new SlackAttachment ();
-            List<SlackAttachment> attachmentList = new List<SlackAttachment> ();
-            string problem = Convert.ToString (payload.problem);
-            if (!string.IsNullOrEmpty (problem)) {
-                HighlightAlert status = GetStatus (problem);
-                string alertSummary = Convert.ToString (payload.alertSummary);
-                string linkUrl = Convert.ToString (payload.linkUrl);
-                attachment.title = $"{status.direction} {alertSummary}";
-                attachment.text = $"{problem} - <{linkUrl}|More information>";
-                attachment.color = status.color;
-                attachment.markdown_in = "title, text";
-                attachmentList.Add (attachment);
-            }
-            return attachmentList;
-        }
-
-        private static HighlightAlert GetStatus (string problem) {
-            // Example: "problem": "Link-Availability - Red alert raised"
-            HighlightAlert status = new HighlightAlert ();
-            string pattern = @"(\w+) alert (\w+)";
-            Match match = Regex.Match (problem.ToLower (), pattern, RegexOptions.IgnoreCase);
-            if (match.Success) {
-                var highlightColor = match.Groups[1].Value;
-                var highlightDirection = match.Groups[2].Value;
-                if (highlightDirection == "raised") {
-                    status.direction = ":warning:";
-                    if (highlightColor == "red") {
-                        status.color = "danger";
-                    } else if (highlightColor == "amber") {
-                        status.color = "warning";
-                    }
-                } else if (highlightDirection == "cleared") {
-                    status.color = "good";
-                    status.direction = ":heavy_check_mark:";
+                if (response.IsSuccessStatusCode) {
+                    return true;
                 } else {
-                    status.direction = ":grey_question:";
+                    log.LogWarning ($"Webhook send failed. Status code: {response.StatusCode}. Message: {await response.Content.ReadAsStringAsync()}");
                 }
+            } catch (Exception ex) {
+                log.LogError ($"Webhook send failed: {ex.Message}");
             }
-            return status;
+
+            // If we got here, something went wrong!
+            return false;
         }
 
         public class SlackAttachment {
+            private SlackAttachment () { }
+
             public string color { get; set; }
             public string title { get; set; }
             public string text { get; set; }
             public string markdown_in { get; set; }
+
+            public static SlackAttachment Create (dynamic payload) {
+                if (payload == null) {
+                    throw new ArgumentNullException (nameof (payload));
+                }
+
+                var highlightAlert = HighlightAlert.Create (payload.problem.ToString ());
+
+                SlackAttachment attachment = new SlackAttachment {
+                    title = $"{highlightAlert.alertIcon} {payload.alertSummary}",
+                    text = $"{payload.problem} - <{payload.linkUrl}|More information>",
+                    color = highlightAlert.color,
+                    markdown_in = "title, text"
+                };
+
+                return attachment;
+            }
         }
 
         public class SlackMessage {
+            private SlackMessage () { }
+
+            public SlackMessage (string text, string mrkdown) {
+                this.text = text;
+                this.mrkdown = mrkdown;
+            }
             public string text { get; set; }
-            public List<SlackAttachment> attachments { get; set; }
+            public IEnumerable<SlackAttachment> attachments { get; set; }
             public string mrkdown { get; set; }
+
+            public override string ToString () {
+                return JsonConvert.SerializeObject (this);
+            }
+
+            public static SlackMessage Create (dynamic payload) {
+                if (payload == null) {
+                    throw new ArgumentNullException (nameof (payload));
+                }
+
+                SlackMessage message = new SlackMessage {
+                    text = $"Highlight Alert",
+                    attachments = new SlackAttachment[] {
+                    SlackAttachment.Create (payload)
+                    },
+                    mrkdown = "True"
+                };
+
+                return message;
+
+            }
         }
 
         public class HighlightAlert {
+            private HighlightAlert () { }
+
             public string color { get; set; }
-            public string direction { get; set; }
+            public string alertIcon { get; set; }
+
+            public static HighlightAlert Create (string problem) {
+                if (string.IsNullOrWhiteSpace (problem)) {
+                    throw new ArgumentNullException (nameof (problem));
+                }
+
+                string color = string.Empty;
+                string alertIcon = ":grey_question:";
+
+                string pattern = @"(\w+) alert (\w+)";
+                Match match = Regex.Match (problem.ToLower (), pattern,
+                    RegexOptions.IgnoreCase);
+
+                if (match.Success) {
+                    var highlightColor = match.Groups[1].Value;
+                    var highlightDirection = match.Groups[2].Value;
+
+                    if (highlightDirection == "raised") {
+                        alertIcon = ":warning:";
+
+                        if (highlightColor == "red") {
+                            color = "danger";
+                        } else if (highlightColor == "amber") {
+                            color = "warning";
+                        }
+                    } else if (highlightDirection == "cleared") {
+                        color = "good";
+                        alertIcon = ":heavy_check_mark:";
+                    }
+                }
+
+                return new HighlightAlert { color = color, alertIcon = alertIcon };
+            }
         }
     }
 }
