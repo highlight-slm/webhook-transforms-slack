@@ -85,7 +85,7 @@ namespace Highlight.WebHookParserFunction {
 
                 var highlightAlert = HighlightAlert.Create (payload.problem.ToString ());
 
-                SlackAttachment attachment = new SlackAttachment {
+                var attachment = new SlackAttachment {
                     title = $"{highlightAlert.alertIcon} {payload.alertSummary}",
                     text = $"{payload.problem} - <{payload.linkUrl}|More information>",
                     color = highlightAlert.color,
@@ -116,7 +116,7 @@ namespace Highlight.WebHookParserFunction {
                     throw new ArgumentNullException (nameof (payload));
                 }
 
-                SlackMessage message = new SlackMessage {
+                var message = new SlackMessage {
                     text = $"Highlight Alert",
                     attachments = new SlackAttachment[] {
                     SlackAttachment.Create (payload)
