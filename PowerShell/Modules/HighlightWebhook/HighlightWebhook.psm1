@@ -17,7 +17,7 @@ function _CreateAttachment {
     $attachement = @{}
     if ($Payload.problem) {
         $status = _GetStatus -Problem $Payload.problem
-        $title = $status.direction + " " + $payload.alertSummary
+        $title = $status.alertIcon + " " + $payload.alertSummary
         $text = $Payload.problem + " - <" + $payload.linkUrl + "|More information>"
         $attachement = @{color=$status.color;title=$title;text=$text;mrkdown_in="title, text"}
     }
@@ -31,24 +31,24 @@ function _GetStatus {
     )
     # Example: "problem": "Link-Availability - Red alert raised"
     $Problem -match '(\w+) alert (\w+)'  # Created $matches automatically
-    $highlightAlert = ($matches.1).ToLower()
-    $highlightAlertDirection = ($matches.2).ToLower()
-    if ($highlightAlertDirection -eq "raised") {
-        if ($highlightAlert -eq "red") {
-            $status = @{color="danger";direction=":warning:"}
+    $highlightColor = ($matches.1).ToLower()
+    $highlightDirection = ($matches.2).ToLower()
+    if ($highlightDirection -eq "raised") {
+        if ($highlightColor -eq "red") {
+            $status = @{color="danger";alertIcon=":warning:"}
         }
-        elseif ($highlightAlert -eq "amber") {
-            $status = @{color="warning";direction=":warning:"}
+        elseif ($color -eq "amber") {
+            $status = @{color="warning";alertIcon=":warning:"}
         }
         else {
-            $status = @{color="";direction=":warning:"}
+            $status = @{color="";alertIcon=":warning:"}
         }
     }
-    elseif ($highlightAlertDirection -eq "cleared") {
-        $status = @{color="good";direction=":heavy_check_mark:"}
+    elseif ($highlightDirection -eq "cleared") {
+        $status = @{color="good";alertIcon=":heavy_check_mark:"}
     }
     else {
-        $status = @{color="";direction=":grey_question:"}
+        $status = @{color="";alertIcon=":grey_question:"}
     }
     return $status
 }

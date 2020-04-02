@@ -56,7 +56,7 @@ def create_attachment(payload):
     return [
         {
             "color": status.color,
-            "title": f"{status.direction} {payload.get('alertSummary')}",
+            "title": f"{status.alert_icon} {payload.get('alertSummary')}",
             "text": f"{payload.get('problem')} - <{payload.get('linkUrl')}|More information>",
             "mrkdown_in": "title, text",
         }
@@ -68,25 +68,25 @@ def get_status(problem):
 
     :param problem: Highlight problem json string
                     e.g. "problem": "Link-Availability - Red alert raised"
-    :return: alert_status, named tuple for color and direction
+    :return: alert_status, named tuple for color and a severity icon
     """
     # Example: "problem": "Link-Availability - Red alert raised"
     alert_status = namedtuple("alert_status", "color direction")
 
     values = re.search(r"(\w+) alert (\w+)", problem, re.IGNORECASE)
-    highlight_alert = values[1].lower()
-    highlight_alert_direction = values[2].lower()
-    if highlight_alert_direction == "raised":
-        if highlight_alert == "red":
-            status = alert_status(color="danger", direction=":warning:")
-        elif highlight_alert == "amber":
-            status = alert_status(color="warning", direction=":warning:")
+    highlight_color = values[1].lower()
+    highlight_direction = values[2].lower()
+    if highlight_direction == "raised":
+        if highlight_color == "red":
+            status = alert_status(color="danger", alert_icon=":warning:")
+        elif highlight_color == "amber":
+            status = alert_status(color="warning", alert_icon=":warning:")
         else:
-            status = alert_status(color=None, direction=":warning:")
-    elif highlight_alert_direction == "cleared":
-        status = alert_status(color="good", direction=":heavy_check_mark:")
+            status = alert_status(color=None, alert_icon=":warning:")
+    elif highlight_direction == "cleared":
+        status = alert_status(color="good", alert_icon=":heavy_check_mark:")
     else:
-        status = alert_status(color=None, direction=":grey_question:")
+        status = alert_status(color=None, alert_icon=":grey_question:")
 
     return status
 

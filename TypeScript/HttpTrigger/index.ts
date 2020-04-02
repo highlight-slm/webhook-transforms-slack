@@ -13,7 +13,7 @@ const httpTrigger: AzureFunction = async (
 
 	interface IAlertStatus {
 		color?: string;
-		direction?: string;
+		alertIcon?: string;
 	}
 
 	function getStatus(problem: string): IAlertStatus {
@@ -21,20 +21,20 @@ const httpTrigger: AzureFunction = async (
 		const status = {} as IAlertStatus;
 		const values = problem.match(/(\w+) alert (\w+)/i);
 		if (values) {
-			const highlightAlert = values[1].toLowerCase();
-			const highlightAlertDirection = values[2].toLowerCase();
-			if (highlightAlertDirection === "raised") {
-				status.direction = ":warning:";
-				if (highlightAlert === "red") {
+			const highlightColor = values[1].toLowerCase();
+			const highlightDirection = values[2].toLowerCase();
+			if (highlightDirection === "raised") {
+				status.alertIcon = ":warning:";
+				if (highlightColor === "red") {
 					status.color = "danger";
-				} else if (highlightAlert === "amber") {
+				} else if (highlightColor === "amber") {
 					status.color = "warning";
 				}
-			} else if (highlightAlertDirection === "cleared") {
-				status.direction = ":heavy_check_mark:";
+			} else if (highlightDirection === "cleared") {
+				status.alertIcon = ":heavy_check_mark:";
 				status.color = "good";
 			} else {
-				status.direction = ":grey_question:";
+				status.alertIcon = ":grey_question:";
 			}
 		}
 		return status;
@@ -46,7 +46,7 @@ const httpTrigger: AzureFunction = async (
 		const status = getStatus(jsonMessage.problem);
 		attachment.push({
 			color: status.color,
-			title: status.direction + " " + jsonMessage.alertSummary,
+			title: status.alertIcon + " " + jsonMessage.alertSummary,
 			text:
 				jsonMessage.problem +
 				" - <" +
