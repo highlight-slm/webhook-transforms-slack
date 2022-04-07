@@ -51,11 +51,11 @@ namespace Highlight.WebHookParserFunction {
         }
 
         public static async Task<bool> PostSlackMessage (string message,
-            string slacklUrl, ILogger log) {
+            string slackUrl, ILogger log) {
             var body = new StringContent (message, Encoding.UTF8, "application/json");
 
             try {
-                var response = await httpClient.PostAsync (slacklUrl, body);
+                var response = await httpClient.PostAsync (slackUrl, body);
 
                 if (response.IsSuccessStatusCode) {
                     return true;

@@ -2,13 +2,13 @@ import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 
 import request = require("request");
 
-const httpTrigger: AzureFunction = async (
+const httpTrigger: AzureFunction = async function (
 	context: Context,
 	req: HttpRequest
-): Promise<void> => {
+): Promise<void> {
 	context.log("HTTP trigger function processed a request.");
 	// Local execution setting in local.settings.json
-	// Azure execution setting configuration -> Applicaiton settings
+	// Azure execution setting configuration -> Application settings
 	const slackWebHook = process.env.SLACK_WEBHOOK_URL;
 
 	interface IAlertStatus {
@@ -52,8 +52,7 @@ const httpTrigger: AzureFunction = async (
 				" - <" +
 				jsonMessage.linkUrl +
 				"|More Information>",
-			// eslint-disable-next-line @typescript-eslint/camelcase
-			mrkdown_in: ["title", "text"]
+			mrkdown_in: ["title", "text"],
 		});
 		return attachment;
 	}
@@ -62,7 +61,7 @@ const httpTrigger: AzureFunction = async (
 		const msg = {
 			mrkdwn: true,
 			text: "Highlight Alert",
-			attachments: messageAttachment(req.rawBody)
+			attachments: messageAttachment(req.rawBody),
 		};
 
 		request(
@@ -70,7 +69,7 @@ const httpTrigger: AzureFunction = async (
 				method: "POST",
 				uri: slackWebHook,
 				json: true,
-				body: msg
+				body: msg,
 			},
 			(error, response, body) => {
 				if (error) {
@@ -78,12 +77,12 @@ const httpTrigger: AzureFunction = async (
 				}
 				if (response.statusCode === 200) {
 					context.res = {
-						body: "OK"
+						body: "OK",
 					};
 				} else {
 					context.res = {
 						status: response.statusCode,
-						body: "Error (" + response.statusCode + "):" + body
+						body: "Error (" + response.statusCode + "):" + body,
 					};
 				}
 			}
@@ -91,7 +90,7 @@ const httpTrigger: AzureFunction = async (
 	} else {
 		context.res = {
 			status: 400, // Bad Request
-			body: "Error: No Data"
+			body: "Error: No Data",
 		};
 	}
 	context.done();

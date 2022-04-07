@@ -56,7 +56,7 @@ def create_attachment(payload):
     return [
         {
             "color": status.color,
-            "title": f"{status.alert_icon} {payload.get('alertSummary')}",
+            "title": f"{status.icon} {payload.get('alertSummary')}",
             "text": f"{payload.get('problem')} - <{payload.get('linkUrl')}|More information>",
             "mrkdown_in": "title, text",
         }
@@ -71,22 +71,22 @@ def get_status(problem):
     :return: alert_status, named tuple for color and a severity icon
     """
     # Example: "problem": "Link-Availability - Red alert raised"
-    alert_status = namedtuple("alert_status", "color direction")
+    alert_status = namedtuple("alert_status", ["color", "icon"])
 
     values = re.search(r"(\w+) alert (\w+)", problem, re.IGNORECASE)
     highlight_color = values[1].lower()
     highlight_direction = values[2].lower()
     if highlight_direction == "raised":
         if highlight_color == "red":
-            status = alert_status(color="danger", alert_icon=":warning:")
+            status = alert_status(color="danger", icon=":warning:")
         elif highlight_color == "amber":
-            status = alert_status(color="warning", alert_icon=":warning:")
+            status = alert_status(color="warning", icon=":warning:")
         else:
-            status = alert_status(color=None, alert_icon=":warning:")
+            status = alert_status(color=None, icon=":warning:")
     elif highlight_direction == "cleared":
-        status = alert_status(color="good", alert_icon=":heavy_check_mark:")
+        status = alert_status(color="good", icon=":heavy_check_mark:")
     else:
-        status = alert_status(color=None, alert_icon=":grey_question:")
+        status = alert_status(color=None, icon=":grey_question:")
 
     return status
 

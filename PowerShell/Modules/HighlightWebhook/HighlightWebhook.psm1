@@ -4,7 +4,7 @@ function Get-SlackFormatMessage {
         [hashtable] $Payload
     )
     $attachement = @(_CreateAttachment -Payload $Payload)
-    $message = @{mrkdwn="True";text="Highlight Alert";attachments=$attachement} | ConvertTo-Json
+    $message = @{mrkdwn = "True"; text = "Highlight Alert"; attachments = $attachement} | ConvertTo-Json
 
     return $message
 }
@@ -19,7 +19,7 @@ function _CreateAttachment {
         $status = _GetStatus -Problem $Payload.problem
         $title = $status.alertIcon + " " + $payload.alertSummary
         $text = $Payload.problem + " - <" + $payload.linkUrl + "|More information>"
-        $attachement = @{color=$status.color;title=$title;text=$text;mrkdown_in="title, text"}
+        $attachement = @{color = $status.color; title = $title; text = $text; mrkdown_in = "title, text"}
     }
     return $attachement
 }
@@ -35,20 +35,20 @@ function _GetStatus {
     $highlightDirection = ($matches.2).ToLower()
     if ($highlightDirection -eq "raised") {
         if ($highlightColor -eq "red") {
-            $status = @{color="danger";alertIcon=":warning:"}
+            $status = @{color = "danger"; alertIcon = ":warning:"}
         }
         elseif ($color -eq "amber") {
-            $status = @{color="warning";alertIcon=":warning:"}
+            $status = @{color = "warning"; alertIcon = ":warning:"}
         }
         else {
-            $status = @{color="";alertIcon=":warning:"}
+            $status = @{color = ""; alertIcon = ":warning:"}
         }
     }
     elseif ($highlightDirection -eq "cleared") {
-        $status = @{color="good";alertIcon=":heavy_check_mark:"}
+        $status = @{color = "good"; alertIcon = ":heavy_check_mark:"}
     }
     else {
-        $status = @{color="";alertIcon=":grey_question:"}
+        $status = @{color = ""; alertIcon = ":grey_question:"}
     }
     return $status
 }
